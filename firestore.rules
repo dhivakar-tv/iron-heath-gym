@@ -1,0 +1,183 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: uid
+    // Fields:
+    //   - uid: string (required) - Firebase Auth UID
+    //   - name: string (required) - Full name
+    //   - email: string (required) - Email address
+    //   - role: string (required, enum: ['admin', 'trainer', 'member']) - User role
+    //   - age: number (optional) - Age of the member
+    //   - planId: string (optional) - ID of the membership plan
+    //   - trainerId: string (optional) - ID of the assigned trainer
+    //   - contact: string (optional) - Contact number
+    //   - joinedAt: string (optional) - Date the user joined
+    //
+    // Collection: attendance
+    // Document ID: attendanceId
+    // Fields:
+    //   - uid: string (required) - User UID
+    //   - date: string (required) - Date of attendance
+    //   - status: string (required, enum: ['present', 'absent']) - Attendance status
+    //   - markedBy: string (optional) - UID of the person who marked attendance
+    //
+    // Collection: equipment
+    // Document ID: equipmentId
+    // Fields:
+    //   - id: string (required) - Equipment ID
+    //   - name: string (required) - Name of the equipment
+    //   - status: string (required, enum: ['available', 'maintenance']) - Current status
+    //   - image: string (optional) - URL of the equipment image
+    //   - description: string (optional) - Description of the equipment
+    //
+    // Collection: plans
+    // Document ID: planId
+    // Fields:
+    //   - id: string (required) - Plan ID
+    //   - name: string (required) - Name of the plan
+    //   - price: number (required) - Price of the plan
+    //   - benefits: list (optional) - List of benefits
+    //
+    // Collection: feedback
+    // Document ID: feedbackId
+    // Fields:
+    //   - id: string (required) - Feedback ID
+    //   - uid: string (required) - User UID
+    //   - userName: string (required) - Name of the user
+    //   - comment: string (required) - Feedback comment
+    //   - rating: number (required) - Rating out of 5
+    //   - createdAt: string (optional) - Date of feedback
+    //
+    // Collection: payments
+    // Document ID: paymentId
+    // Fields:
+    //   - id: string (required) - Transaction ID
+    //   - uid: string (required) - User UID
+    //   - memberName: string (required) - Name of the member
+    //   - amount: number (required) - Payment amount
+    //   - date: string (required) - Payment date
+    //   - status: string (required) - Payment status
+    //   - planName: string (required) - Name of the plan
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+         (request.auth.token.email == "dhivadhivakar29k@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isTrainer() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'trainer';
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasRequiredFields(['uid', 'name', 'email', 'role']) &&
+             data.uid is string && data.name is string && data.email is string &&
+             data.role in ['admin', 'trainer', 'member'];
+    }
+
+    function isValidAttendance(data) {
+      return hasRequiredFields(['uid', 'date', 'status']) &&
+             data.uid is string && data.date is string &&
+             data.status in ['present', 'absent'];
+    }
+
+    function isValidEquipment(data) {
+      return hasRequiredFields(['id', 'name', 'status']) &&
+             data.id is string && data.name is string &&
+             data.status in ['available', 'maintenance'];
+    }
+
+    function isValidPlan(data) {
+      return hasRequiredFields(['id', 'name', 'price']) &&
+             data.id is string && data.name is string && data.price is number;
+    }
+
+    function isValidFeedback(data) {
+      return hasRequiredFields(['id', 'uid', 'userName', 'comment', 'rating']) &&
+             data.id is string && data.uid is string && data.userName is string &&
+             data.comment is string && data.rating is number;
+    }
+
+    function isValidPayment(data) {
+      return hasRequiredFields(['id', 'uid', 'memberName', 'amount', 'date', 'status', 'planName']) &&
+             data.id is string && data.uid is string && data.memberName is string &&
+             data.amount is number && data.date is string && data.status is string &&
+             data.planName is string;
+    }
+
+    // ===============================================================
+    // Match Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidUser(request.resource.data);
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /attendance/{attendanceId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidAttendance(request.resource.data) && (isAdmin() || isTrainer());
+      allow update: if isAuthenticated() && isValidAttendance(request.resource.data) && (isAdmin() || isTrainer());
+      allow delete: if isAdmin();
+    }
+
+    match /equipment/{equipmentId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated(); // Allow seeding
+    }
+
+    match /plans/{planId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated(); // Allow seeding
+    }
+
+    match /feedback/{feedbackId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidFeedback(request.resource.data);
+      allow update: if isAuthenticated() && isValidFeedback(request.resource.data) && (isOwner(request.resource.data.uid) || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidPayment(request.resource.data);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+  }
+}

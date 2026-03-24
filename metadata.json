@@ -1,0 +1,5 @@
+{
+  "name": "Iron Haven Gym Management",
+  "description": "A professional full-stack gym management system with role-based dashboards for admins, trainers, and members.",
+  "requestFramePermissions": []
+}

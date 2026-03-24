@@ -1,0 +1,128 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the gym management system (Admin, Trainer, or Member)",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "name": { "type": "string", "description": "Full name of the user" },
+        "email": { "type": "string", "description": "Email address" },
+        "role": { "type": "string", "enum": ["admin", "trainer", "member"], "description": "User role" },
+        "age": { "type": "number", "description": "Age of the member" },
+        "planId": { "type": "string", "description": "ID of the membership plan" },
+        "trainerId": { "type": "string", "description": "ID of the assigned trainer" },
+        "contact": { "type": "string", "description": "Contact number" },
+        "joinedAt": { "type": "string", "format": "date-time", "description": "Date the user joined" }
+      },
+      "required": ["uid", "name", "email", "role"]
+    },
+    "Attendance": {
+      "title": "Attendance",
+      "description": "Daily attendance record for members",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "User UID" },
+        "date": { "type": "string", "format": "date", "description": "Date of attendance" },
+        "status": { "type": "string", "enum": ["present", "absent"], "description": "Attendance status" },
+        "markedBy": { "type": "string", "description": "UID of the person who marked attendance" }
+      },
+      "required": ["uid", "date", "status"]
+    },
+    "Equipment": {
+      "title": "Equipment",
+      "description": "Gym equipment details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Equipment ID" },
+        "name": { "type": "string", "description": "Name of the equipment" },
+        "status": { "type": "string", "enum": ["available", "maintenance"], "description": "Current status" },
+        "image": { "type": "string", "description": "URL of the equipment image" },
+        "description": { "type": "string", "description": "Description of the equipment" }
+      },
+      "required": ["id", "name", "status"]
+    },
+    "Plan": {
+      "title": "Plan",
+      "description": "Gym membership plans",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Plan ID" },
+        "name": { "type": "string", "description": "Name of the plan" },
+        "price": { "type": "number", "description": "Price of the plan" },
+        "benefits": { "type": "array", "items": { "type": "string" }, "description": "List of benefits" }
+      },
+      "required": ["id", "name", "price"]
+    },
+    "Feedback": {
+      "title": "Feedback",
+      "description": "Testimonials from members",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Feedback ID" },
+        "uid": { "type": "string", "description": "User UID" },
+        "userName": { "type": "string", "description": "Name of the user" },
+        "comment": { "type": "string", "description": "Feedback comment" },
+        "rating": { "type": "number", "description": "Rating out of 5" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Date of feedback" }
+      },
+      "required": ["id", "uid", "userName", "comment", "rating"]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "Payment records for members",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Payment ID" },
+        "uid": { "type": "string", "description": "User UID" },
+        "userName": { "type": "string", "description": "Name of the user" },
+        "amount": { "type": "number", "description": "Amount paid" },
+        "date": { "type": "string", "format": "date-time", "description": "Date of payment" },
+        "status": { "type": "string", "enum": ["completed", "pending", "failed"], "description": "Payment status" }
+      },
+      "required": ["id", "uid", "userName", "amount", "date", "status"]
+    },
+    "Progress": {
+      "title": "Progress",
+      "description": "Weight and fitness progress for members",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Progress ID" },
+        "uid": { "type": "string", "description": "User UID" },
+        "weight": { "type": "number", "description": "Weight in kg" },
+        "date": { "type": "string", "format": "date-time", "description": "Date of measurement" }
+      },
+      "required": ["id", "uid", "weight", "date"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/attendance/{attendanceId}": {
+      "schema": "Attendance",
+      "description": "Daily attendance records"
+    },
+    "/equipment/{equipmentId}": {
+      "schema": "Equipment",
+      "description": "Gym equipment inventory"
+    },
+    "/plans/{planId}": {
+      "schema": "Plan",
+      "description": "Membership plans"
+    },
+    "/feedback/{feedbackId}": {
+      "schema": "Feedback",
+      "description": "Member testimonials"
+    },
+    "/payments/{paymentId}": {
+      "schema": "Payment",
+      "description": "Payment records"
+    },
+    "/progress/{progressId}": {
+      "schema": "Progress",
+      "description": "Member progress records"
+    }
+  }
+}
